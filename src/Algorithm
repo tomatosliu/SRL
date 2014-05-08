@@ -1,0 +1,9 @@
+我现在的perceptron是输入以词为单词的Strings，然后针对一个词不断地训练
+
+beam search需要以一块为单位进行标注
+train：标号以后对这个最佳的标注进行修改
+test：找到最后最佳的一个标注
+
+现在的结构瞎，我还按原来的进行输入，
+train： perceptron内自行检测块，然后进行beamsearch
+test：输入整体的数据（而不是一条条输入），这样内部进行块的检测，进行beam search的最佳搜索
