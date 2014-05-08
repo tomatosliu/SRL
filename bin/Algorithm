@@ -1,0 +1,53 @@
+对于POS tagging来说
+
+设置的templates-features:
+1. current word: 我们, ....
+2. prefix: 我, ....(one characters)
+3. sufix: 们, ...(one characters)
+
+设置的labels:
+N, NN, AP...
+
+
+templates * labels得到features
+按下面的格式存储每个词训练POS tagging的时候feature的格式
+current__w__prefix__pre__sufix__su
+
+在进入perceptron的时候，上面feature的格式中的具体特征一律转换为数值对应parameter的下标
+
+
+
+
+perceptron
+初始化：int sumoftemplates, ArrayList<String> labels
+Train: public void trainMachine(ArrayList<String> featureLabel)
+	featureLabel每个元素的格式是current__w__prefix__pre__sufix__su__label__l
+	
+Bigram	
+Begin: #
+end: $
+
+
+Chunker:
+使用Perceptron进行IOB标注，然后根据统计标注后置Tag
+
+加入GEN class，每次train或者test找最大的时候，需要查看是否满足条件
+
+
+SRL
+面对一个V进行feature的形成
+
+*数据间隔必在某些列上: 每行数据都由\t分割，因为虽然汉字在屏幕上显示和字母等有差别，所以需要直接看编码在程序中的格式
+这次SRL读数据的时候，直接读成一个二维数组，每一列对应相应的含义。
+binary feature to indicate if the argument starts with a predicate particle 
+
+
+train：
+读入：
+	words PoS Chunk
+	SRL: 列数，二维数组存放每一个元素，需要记录每个句子的动词个数，也就是列数（其实二维数组突变的位置，就是句子动词数突变的位置）
+形成feature String
+	每句话按动词的个数展开，还是一个线性的feature String set
+	得到结果之后，需要根据句子的动词的个数还原格式
+*处理chunk和 SRL之间的对应
+	统计一下chunk的结果：对词而言（标签，起始位置，长度）
