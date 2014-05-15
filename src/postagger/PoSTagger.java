@@ -42,6 +42,15 @@ public class PoSTagger {
 		featsname.add("prefix");
 		featsname.add("sufix");
 		featsname.add("length");
+		
+		featsname.add("previous2");
+		featsname.add("fore2-bigram");
+		
+		featsname.add("next2");
+		featsname.add("behind2-bigram");
+		
+		featsname.add("fore-trigram");
+		featsname.add("behind-trigram");
 	}
 	
 	/**
@@ -137,16 +146,47 @@ public class PoSTagger {
 			// length
 			feats.add(String.valueOf(ch.length));
 			
-			
-			// label
+			// previous2 fore2-bigram
+			if(i == 0 || words.get(i-1).equals("")) {// first word in a sentence
+				feats.add("#");
+				feats.add("##");
+			}
+			else if(i == 1 || words.get(i-2).equals("")) {// second word in a sentence
+				feats.add("#");
+				feats.add("#" + words.get(i-1));
+			}
+			else {
+				feats.add(words.get(i-2));
+				feats.add(words.get(i-2) + words.get(i-1));
+			}
+			// next2 behind2-bigram
+			if(i == words.size()-1 || words.get(i+1).equals("")) {
+				feats.add("$");
+				feats.add("$$");
+			}
+			else if(i == words.size()-2 || words.get(i+2).equals("")) {
+				feats.add("$");
+				feats.add(words.get(i+1)+"$");
+			}
+			else {
+				feats.add(words.get(i+2));
+				feats.add(words.get(i+1)+words.get(i+2));
+			}
+			// fore-trigram
+			feats.add(feats.get(9)+feats.get(0));
+			// beihind-trigram
+			feats.add(feats.get(0)+feats.get(11));
+			/**
+			 *  label
+			 */
 			feats.add(labelsIns.get(i));
 			
 			// Add into the list of training data
 			feaLabels.add(instance.formFeats(featsname, feats));
 		}		
-		Perceptron p = new Perceptron(8, labels, null);
+		Perceptron p = new Perceptron(14, labels, null);
 		
-		p.trainMachine(feaLabels, 0.02);
+		p.trainMachine(feaLabels, 0.005);
 		
 		return p;
 	}
@@ -211,7 +251,37 @@ public class PoSTagger {
 			feats.add(String.valueOf(ch[ch.length-1]));
 			// length
 			feats.add(String.valueOf(ch.length));
-			
+			// previous2 fore2-bigram
+			if(i == 0 || words.get(i-1).equals("")) {// first word in a sentence
+				feats.add("#");
+				feats.add("##");
+			}
+			else if(i == 1 || words.get(i-2).equals("")) {// second word in a sentence
+				feats.add("#");
+				feats.add("#" + words.get(i-1));
+			}
+			else {
+				feats.add(words.get(i-2));
+				feats.add(words.get(i-2) + words.get(i-1));
+			}
+			// next2 behind2-bigram
+			if(i == words.size()-1 || words.get(i+1).equals("")) {
+				feats.add("$");
+				feats.add("$$");
+			}
+			else if(i == words.size()-2 || words.get(i+2).equals("")) {
+				feats.add("$");
+				feats.add(words.get(i+1)+"$");
+			}
+			else {
+				feats.add(words.get(i+2));
+				feats.add(words.get(i+1)+words.get(i+2));
+			}
+			// fore-trigram
+			feats.add(feats.get(9)+feats.get(0));
+			// beihind-trigram
+			feats.add(feats.get(0)+feats.get(11));
+						
 			testInstances.add(instance.formFeats(featsname, feats));
 		}
 		

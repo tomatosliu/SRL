@@ -2,6 +2,7 @@ package chunker;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -71,6 +72,7 @@ public class Chunker {
 		/**
 		 * Accumulate feature names
 		 */
+		
 		featsname.add("current");
 		featsname.add("cur-PoSTag");
 		
@@ -84,14 +86,24 @@ public class Chunker {
 		featsname.add("fore-biPosTag");
 		featsname.add("next-PoSTag");
 		featsname.add("behind-biPosTag");
+		// new
+		featsname.add("previous2");
+		featsname.add("fore2-bigram");
+		featsname.add("pre2-PoSTag");
+		featsname.add("fore2-biPosTag");
+		
+		featsname.add("next2");
+		featsname.add("behind2-bigram");
+		featsname.add("next2-PoSTag");
+		featsname.add("behind2-biPosTag");
 	}
 	
 	public ArrayList<String> getTags(String trnflname, String trnposchkflname, 
-			String testflname) throws IOException {
+			String testflname, String testposflname) throws IOException {
 		// Train
 		Perceptron p = train(trnflname, trnposchkflname);
 		// Test to get the tags
-		test(p, testflname);
+		test(p, testflname, testposflname);
 		
 		return tags;
 	}
@@ -216,7 +228,49 @@ public class Chunker {
 				feats.add(PoSlabelsIns.get(i)+PoSlabelsIns.get(i+1));
 			}
 
-			// label
+			// previous2 fore2-bigram pre2-PoSTag fore2-biPosTag
+			if(i == 0 || words.get(i-1).equals("")) {// first word in a sentence
+				feats.add("#");
+				feats.add("##");
+				feats.add("#");
+				feats.add("##");
+			}
+			else if(i == 1 || words.get(i-2).equals("")) {// second word in a sentence
+				feats.add("#");
+				feats.add("#" + words.get(i-1));
+				feats.add("#");
+				feats.add("#"+PoSlabelsIns.get(i-1));
+			}
+			else {
+				feats.add(words.get(i-2));
+				feats.add(words.get(i-2) + words.get(i-1));
+				feats.add(PoSlabelsIns.get(i-2));
+				feats.add(PoSlabelsIns.get(i-2)+PoSlabelsIns.get(i-1));
+			}
+			// next2 behind2-bigram next2-PoSTag behind2-biPosTag
+			if(i == words.size()-1 || words.get(i+1).equals("")) {
+				feats.add("$");
+				feats.add("$$");
+				feats.add("$");
+				feats.add("$$");
+			}
+			else if(i == words.size()-2 || words.get(i+2).equals("")) {
+				feats.add("$");
+				feats.add(words.get(i+1)+"$");
+				feats.add("$");
+				feats.add(PoSlabelsIns.get(i+1)+"$");
+			}
+			else {
+				feats.add(words.get(i+2));
+				feats.add(words.get(i+1)+words.get(i+2));
+				feats.add(PoSlabelsIns.get(i+2));
+				feats.add(PoSlabelsIns.get(i+1)+PoSlabelsIns.get(i+2));
+			}
+			
+			
+			/**
+			 *  label
+			 */
 			feats.add(labelsIns.get(i));
 			
 			// Add into the list of training data
@@ -226,39 +280,43 @@ public class Chunker {
 		/**
 		 * Tarin
 		 */
-		Perceptron p = new Perceptron(10, labels, new Gen());
-		p.trainMachine(feaLabels, 0.02);
+		Perceptron p = new Perceptron(18, labels, new Gen());
+		p.trainMachine(feaLabels, 0.01);
 		
 		return p;
 	}
 	
 	
-	public void test(Perceptron p, String testflname) throws IOException {
+	public void test(Perceptron p, String testflname, String testposflname) throws IOException {
 		ArrayList<String> ChunklabelsIns = new ArrayList<String>();
 		ArrayList<String> PoSlabelsIns = new ArrayList<String>();
 
 		// Read words
-		@SuppressWarnings("resource")
 		BufferedReader br1 = new BufferedReader(new InputStreamReader(
 				new FileInputStream(testflname),"utf-8"
 				));
-		@SuppressWarnings("resource")
 		BufferedReader br2 = new BufferedReader(new InputStreamReader(
+				new FileInputStream(testposflname)
+				));
+		BufferedReader br4 = new BufferedReader(new InputStreamReader(
 				new FileInputStream("./data/dev.pos-chk")
 				));
 		String tmp = null;
 		while((tmp = br1.readLine()) != null) {
 			words.add(tmp);
 			tmp = br2.readLine();
-			String []str = tmp.split("\t");
+			PoSlabelsIns.add(tmp);
 			
-			PoSlabelsIns.add(str[0]);
+			tmp = br4.readLine();
+			String []str = tmp.split("\t");
 			if(str.length == 1)
 				ChunklabelsIns.add(str[0]);
 			else
 				ChunklabelsIns.add(str[1]);
 		}
-		
+		br1.close();
+		br2.close();
+		br4.close();
 		// Form feature
 		Instance instance = new Instance();
 		for(int i=0; i<words.size(); i++) {
@@ -312,6 +370,45 @@ public class Chunker {
 				feats.add(PoSlabelsIns.get(i)+PoSlabelsIns.get(i+1));
 			}
 			
+			// previous2 fore2-bigram pre2-PoSTag fore2-biPosTag
+			if(i == 0 || words.get(i-1).equals("")) {// first word in a sentence
+				feats.add("#");
+				feats.add("##");
+				feats.add("#");
+				feats.add("##");
+			}
+			else if(i == 1 || words.get(i-2).equals("")) {// second word in a sentence
+				feats.add("#");
+				feats.add("#" + words.get(i-1));
+				feats.add("#");
+				feats.add("#"+PoSlabelsIns.get(i-1));
+			}
+			else {
+				feats.add(words.get(i-2));
+				feats.add(words.get(i-2) + words.get(i-1));
+				feats.add(PoSlabelsIns.get(i-2));
+				feats.add(PoSlabelsIns.get(i-2)+PoSlabelsIns.get(i-1));
+			}
+			// next2 behind2-bigram next2-PoSTag behind2-biPosTag
+			if(i == words.size()-1 || words.get(i+1).equals("")) {
+				feats.add("$");
+				feats.add("$$");
+				feats.add("$");
+				feats.add("$$");
+			}
+			else if(i == words.size()-2 || words.get(i+2).equals("")) {
+				feats.add("$");
+				feats.add(words.get(i+1)+"$");
+				feats.add("$");
+				feats.add(PoSlabelsIns.get(i+1)+"$");
+			}
+			else {
+				feats.add(words.get(i+2));
+				feats.add(words.get(i+1)+words.get(i+2));
+				feats.add(PoSlabelsIns.get(i+2));
+				feats.add(PoSlabelsIns.get(i+1)+PoSlabelsIns.get(i+2));
+			}
+						
 			testInstances.add(instance.formFeats(featsname, feats));
 		}
 		
@@ -358,10 +455,16 @@ public class Chunker {
 				tags.set(i, "*");
 		}
 		int cor = 0;
+		FileWriter fileWriter = new FileWriter("./data/dev.chk");
 		for(int i=0; i<tags.size(); i++) {
+			if(tags.get(i).equals(""))
+				fileWriter.write("\n");
+			else
+				fileWriter.write(PoSlabelsIns.get(i)+"\t"+tags.get(i) + "\n");
 			if(tags.get(i).equals(ChunklabelsIns.get(i)))
 				cor ++;
 		}
+		fileWriter.close();
 		System.out.println((double)cor/tags.size());
 	}
 }
